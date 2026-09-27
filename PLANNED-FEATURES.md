@@ -1,4 +1,6 @@
-# GoreeCloud Sync — Feature Roadmap
+# GoreeCloud Sync — Planned Features
+
+> **Authority:** Repository-native planned-feature record. The former Drive roadmap is retired after verified migration.
 
 **Status:** Active roadmap control  
 **As of:** 2026-09-08  
@@ -16,7 +18,7 @@ This file is the repository-side feature roadmap control for GoreeCloud Sync. It
 | --- | --- | --- | --- |
 | FR-001 | Reconcile and maintain every current planned or recommended GoreeCloud Sync feature from the authoritative project record and verified repository evidence in this roadmap. | High | Ongoing control |
 | FR-002 | Move actionable feature obligations into GoreeCloud Tasks Management when required, preserving priority, dependency, and lifecycle disposition. | High | Ongoing control |
-| FR-003 | Do not mark features implemented, complete, cancelled, or superseded without authoritative evidence and synchronized repository/Drive roadmap updates. | High | Ongoing control |
+| FR-003 | Do not mark features implemented, complete, cancelled, or superseded without authoritative evidence and  | High | Ongoing control |
 
 ## Maintenance and synchronization
 
