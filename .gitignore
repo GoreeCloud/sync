@@ -1,0 +1,23 @@
+# Native build outputs and private local state
+/bin/
+/dist/
+/build/
+/*.exe
+/*.app/
+/*.apk
+*.test
+*.out
+*.log
+*.prof
+coverage.txt
+.idea/
+.vscode/
+.DS_Store
+device.crt
+device.key
+*.p12
+*.keystore
+*.jks
+.env
+.env.*
+!.env.example
