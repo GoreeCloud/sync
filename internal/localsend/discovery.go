@@ -74,11 +74,12 @@ func Discover(ctx context.Context, me DeviceInfo) ([]Peer, error) {
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, 4)
 	found := make(chan Peer, len(peers))
+outer:
 	for _, candidate := range peers {
 		select {
 		case semaphore <- struct{}{}:
 		case <-probeCtx.Done():
-			break
+			break outer
 		}
 		wg.Add(1)
 		go func(p Peer) {
