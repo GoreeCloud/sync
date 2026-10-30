@@ -7,6 +7,7 @@ As GoreeCloud's founder, I prioritize real native functionality, reliable privat
 - [x] Add original native desktop navigation and a read-only local Syncthing adapter.
 - [x] Add HTTPS LocalSend-style sender/receiver, approval, certificate pinning and integrity checks.
 - [x] Add initial unit and loopback transfer tests.
+- [x] Verify isolated Linux desktop startup liveness under Xvfb (CI smoke test).
 - [ ] Verify full desktop launch, keyboard navigation and visual compliance.
 - [ ] Verify communication with official LocalSend clients.
 
