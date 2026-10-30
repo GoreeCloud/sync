@@ -63,15 +63,26 @@ func (r *Receiver) Serve(ctx context.Context, address string) error {
 	if err != nil {
 		return err
 	}
+	return r.ServeListener(ctx, ln)
+}
+
+// ServeListener uses an already-bound listener to support reliable native start/stop.
+func (r *Receiver) ServeListener(ctx context.Context, ln net.Listener) error {
+	if ln == nil { return errors.New("listener is required") }
 	tlsLn := tls.NewListener(ln, &tls.Config{Certificates: []tls.Certificate{r.Identity.Certificate}, MinVersion: tls.VersionTLS12})
-	server := &http.Server{Handler: r.Handler(), ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 60 * time.Second}
+	server := &http.Server{Handler: r.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Minute, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
+	finished := make(chan struct{})
 	go func() {
-		<-ctx.Done()
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = server.Shutdown(shutdownCtx)
+		select {
+		case <-ctx.Done():
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := server.Shutdown(shutdownCtx); err != nil { _ = server.Close() }
+		case <-finished:
+		}
 	}()
-	err = server.Serve(tlsLn)
+	err := server.Serve(tlsLn)
+	close(finished)
 	if errors.Is(err, http.ErrServerClosed) {
 		return nil
 	}
