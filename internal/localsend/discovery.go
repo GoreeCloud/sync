@@ -6,6 +6,8 @@ import (
 	"errors"
 	"net"
 	"sort"
+	"strconv"
+	"sync"
 	"time"
 )
 
@@ -57,12 +59,40 @@ func Discover(ctx context.Context, me DeviceInfo) ([]Peer, error) {
 		if peer.Port == 0 {
 			peer.Port = DefaultPort
 		}
-		peers[peer.Fingerprint] = Peer{IP: remote.IP, Info: peer}
+		// Multicast is not authenticated. Never use its fingerprint as a TLS pin.
+		if peer.Protocol != "https" || peer.Port < 1 || peer.Port > 65535 ||
+			!(remote.IP.IsPrivate() || remote.IP.IsLoopback() || remote.IP.IsLinkLocalUnicast()) {
+			continue
+		}
+		if len(peers) >= 32 { continue }
+		peers[remote.IP.String()+":"+strconv.Itoa(peer.Port)] = Peer{IP: remote.IP, Info: peer}
 	}
-	result := make([]Peer, 0, len(peers))
-	for _, p := range peers {
-		result = append(result, p)
+	// Probe HTTPS certificates before any candidate reaches the sender UI.
+	// Limit concurrent attempts to avoid hostile LAN traffic exhausting resources.
+	probeCtx, stop := context.WithTimeout(ctx, 8*time.Second)
+	defer stop()
+	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, 4)
+	found := make(chan Peer, len(peers))
+	for _, candidate := range peers {
+		select {
+		case semaphore <- struct{}{}:
+		case <-probeCtx.Done():
+			break
+		}
+		wg.Add(1)
+		go func(p Peer) {
+			defer wg.Done()
+			defer func(){ <-semaphore }()
+			observed, err := Probe(probeCtx, p.IP, p.Info.Port, me)
+			if err == nil && observed.Info.Fingerprint != me.Fingerprint { found <- observed }
+		}(candidate)
 	}
+	wg.Wait()
+	close(found)
+	result := make([]Peer, 0, len(found))
+	for p := range found { result = append(result, p) }
+	if err := ctx.Err(); err != nil { return nil, err }
 	sort.Slice(result, func(i, j int) bool { return result[i].Info.Alias < result[j].Info.Alias })
 	return result, nil
 }
