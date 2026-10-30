@@ -69,6 +69,9 @@ func safeName(s string) error {
 		strings.ContainsAny(s, "/\\\x00\r\n") {
 		return errors.New("unsafe file name")
 	}
+	if strings.ContainsAny(s, ":*?\"<>|") || strings.HasSuffix(s, ".") || strings.HasSuffix(s, " ") {
+		return errors.New("unsafe portable file name")
+	}
 	for _, r := range s {
 		if r < 32 || r == 127 {
 			return errors.New("control character in file name")
