@@ -2,7 +2,7 @@
 
 As the founder, I require privacy-first defaults and verifiable security claims.
 
-Current controls: Syncthing API is restricted to localhost/loopback with an API key and no redirects. LocalSend send requires a local-network IP and HTTPS certificate pinning. An inbound offer is denied unless the user selects a destination and approves the transfer. Uploads use unique per-session tokens, explicit size/filename bounds, an integrity digest, private temporary files and exclusive destination creation without overwrite.
+Current controls: Syncthing API is restricted to localhost/loopback with an API key and no redirects. LocalSend send requires a local-network IP and HTTPS certificate pinning. An inbound offer is denied unless the user selects a destination and approves the transfer. Uploads use unique per-session tokens, explicit size/filename bounds (including portable filename restrictions), an integrity digest, private temporary files and exclusive destination creation without overwrite.
 
 The LocalSend discovery advertisement is unauthenticated. GoreeCloud Sync now obtains a peer fingerprint from the observed HTTPS registration certificate rather than treating multicast metadata as a certificate pin. This initial HTTPS observation **does not authenticate the peer**: users must independently verify the receiving device's SHA-256 fingerprint before sending. TLS private material is stored in the user's private configuration path, and API keys are never written to preferences. This prototype includes no cloud relay or telemetry.
 
