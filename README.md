@@ -22,18 +22,19 @@ go vet ./...
 go run ./cmd/goreecloud-sync
 ```
 
-In the **Sync** tab, enter the local Syncthing address (default `http://127.0.0.1:8384`) and API key. The app does not persist the key. **Nearby** can scan for peers and attempt a directly encrypted send; verify the recipient's certificate fingerprint on their device before proceeding. To receive, select an inbox and approve individual incoming offers. Don't enable receiving on untrusted networks.
+In the **Sync** tab, enter the local Syncthing address (default `http://127.0.0.1:8384`) and API key. The app does not persist the key. **Nearby** scans for HTTPS peers and derives their fingerprints from the actual peer TLS certificates; independently verify the displayed fingerprint with the receiving device before proceeding. Discovery alone does not establish identity. To receive, select an inbox and approve individual incoming offers. Don't enable receiving on untrusted networks.
 
 ## Architecture and milestones
 
 - [Architecture and implementation boundaries](docs/ARCHITECTURE.md)
 - [Engineering milestones and unfinished work](docs/ROADMAP.md)
 - [Current security model and unresolved risks](docs/SECURITY.md)
+- [Local engine diagnostics](docs/LOCAL_ENGINE_DIAGNOSTICS.md)
 
 As the founder, I require native OS deliverables to be verified separately. No Android APK exists yet. When an Android APK is built for installation, deliver the standalone APK in the authorized Google Drive `GoreeCloud/Artifacts` folder; GitHub Actions ZIPs are not Android installer deliveries.
 
 ## Ownership and third-party attribution
 
-The GoreeCloud integration code in this repository is original work. No upstream source trees are copied here. Syncthing and LocalSend retain their independent copyright, licensing, protocol and trademark obligations. Bundling those engines in a future combined distribution requires a documented dependency-by-dependency licensing and notice review. This private repository does not assert a license grant for GoreeCloud-original code.
+The GoreeCloud integration code in this repository is original work. No upstream source trees are copied here. Syncthing and LocalSend retain their independent copyright, licensing, protocol and trademark obligations. Bundling those engines in a future combined distribution requires a documented dependency-by-dependency licensing and notice review. This public repository does not assert a license grant for GoreeCloud-original code; verify the applicable licensing terms before reuse.
 
 **Do not represent source compilation, automated tests or protocol resemblance as complete native runtime certification or LocalSend interoperability.**

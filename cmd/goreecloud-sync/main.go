@@ -161,12 +161,11 @@ func main() {
 	receiving := widget.NewLabel("Receiving disabled • Select an inbox to enable it.")
 	ctxReceive, cancelReceive := context.WithCancel(context.Background())
 	defer cancelReceive()
-	var receiverRunning bool
+	var runningReceiver *localsend.RunningReceiver
 	var enableReceive *widget.Button
+	var stopReceive *widget.Button
 	enableReceive = widget.NewButtonWithIcon("Choose inbox and enable receiving", theme.FolderOpenIcon(), func() {
-		if receiverRunning {
-			return
-		}
+		if runningReceiver != nil { return }
 		dialog.ShowFolderOpen(func(uri fyne.ListableURI, err error) {
 			if err != nil {
 				dialog.ShowError(err, w)
@@ -202,18 +201,43 @@ func main() {
 				dialog.ShowError(e, w)
 				return
 			}
-			receiverRunning = true
+			// Port binding completes before the UI reports that receiving is enabled.
+			running, e := localsend.StartReceiving(ctxReceive, receiver, fmt.Sprintf(":%d", localsend.DefaultPort))
+			if e != nil {
+				dialog.ShowError(e, w)
+				return
+			}
+			runningReceiver = running
 			enableReceive.Disable()
-			receiving.SetText("Secure receiving enabled • Every file requires approval • " + inbox)
+			stopReceive.Enable()
+			receiving.SetText("Receiving enabled • Every offer requires approval • " + inbox)
+			appendLog("Nearby receiving enabled on port 53317")
 			go func() {
-				if e := receiver.Serve(ctxReceive, fmt.Sprintf(":%d", localsend.DefaultPort)); e != nil {
-					appendLog("Receiver stopped: " + e.Error())
-					fyne.Do(func() { receiverRunning = false; enableReceive.Enable(); receiving.SetText("Receiving disabled") })
-				}
+				<-running.Done()
+				stoppedErr := running.Err()
+				fyne.Do(func() {
+					if runningReceiver != running { return }
+					runningReceiver = nil
+					enableReceive.Enable()
+					stopReceive.Disable()
+					receiving.SetText("Receiving disabled • Select an inbox to enable it.")
+				})
+				if stoppedErr != nil { appendLog("Receiver stopped: " + stoppedErr.Error()) } else { appendLog("Nearby receiving stopped") }
 			}()
-			appendLog("Secure LocalSend receiver started on port 53317")
 		}, w)
 	})
+	stopReceive = widget.NewButtonWithIcon("Stop receiving", theme.MediaStopIcon(), func() {
+		if runningReceiver == nil { return }
+		current := runningReceiver
+		stopReceive.Disable()
+		receiving.SetText("Stopping nearby receiving…")
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 7*time.Second)
+			defer cancel()
+			if err := current.Stop(ctx); err != nil { appendLog("Receiver stop failed: " + err.Error()) }
+		}()
+	})
+	stopReceive.Disable()
 
 	peers := []localsend.Peer{}
 	selectPeer := widget.NewSelect(nil, func(string) {})
@@ -295,7 +319,7 @@ func main() {
 			widget.NewLabel("Your device: "+identity.Alias),
 			widget.NewLabel("No cloud relay required. Connect to the same local network."),
 			container.NewHBox(scan), selectPeer, send)),
-		widget.NewCard("RECEIVE", "Explicit consent for every transfer", container.NewVBox(receiving, enableReceive)),
+		widget.NewCard("RECEIVE", "Explicit consent for every transfer", container.NewVBox(receiving, container.NewHBox(enableReceive, stopReceive))),
 		widget.NewCard("YOUR DEVICE FINGERPRINT", "Share to verify a secure connection", fingerprint),
 	))
 	settingsPage := container.NewVBox(widget.NewCard("Privacy & engine boundaries", "Default protections", widget.NewLabel(
