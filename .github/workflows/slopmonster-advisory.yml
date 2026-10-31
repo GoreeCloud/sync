@@ -1,0 +1,30 @@
+name: SlopMonster editorial advisory
+
+on:
+  pull_request:
+    paths:
+      - '*.md'
+      - '*.html'
+      - '**/*.md'
+      - '**/*.html'
+      - '.github/workflows/slopmonster-advisory.yml'
+  push:
+    branches: [main]
+    paths:
+      - '*.md'
+      - '*.html'
+      - '**/*.md'
+      - '**/*.html'
+      - '.github/workflows/slopmonster-advisory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  editorial-review:
+    # This is a template. Rollout pins BOTH references to the verified
+    # central main commit on application, never merges this @main template.
+    uses: GoreeCloud/.github/.github/workflows/slopmonster-advisory.yml@0606e9e47948af6e15abfa6171002dae116ebb32
+    with:
+      advisory_sha: 0606e9e47948af6e15abfa6171002dae116ebb32
