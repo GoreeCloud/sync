@@ -1,0 +1,50 @@
+name: Verify
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 verified tag commit
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5 verified tag commit
+        with:
+          go-version-file: go.mod
+      - run: test -f LICENSE && grep -q '^MIT License$' LICENSE && grep -q '^Copyright (c) 2026 GoreeCloud$' LICENSE
+      - run: python3 -B -m unittest discover -s tools -p "test_*.py"
+      - run: python3 -B tools/verify_source_manifest.py
+      - run: test -z "$(gofmt -l cmd internal)"
+      - run: go test -race ./...
+      - run: go test ./internal/syncplan -run "TestStagedDestination|TestStagingResidue" -count=1
+      - run: go test ./internal/lansend -run "TestReceiverStage|TestReceiverRejectsUnsafeDir" -count=1
+      - run: go test ./internal/lansend -run "TestSenderSource|TestStableSenderSource|TestSourceSecondPass" -count=1
+      - run: go test ./internal/deviceid -run "TestDeviceIdentity|TestDeviceTrust|TestTrust|TestUntrust" -count=1
+      - run: go vet ./...
+      - run: go build ./cmd/sync
+      - run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /tmp/gcsync-linux-arm64 ./cmd/sync
+      - run: CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -o /tmp/gcsync-android-arm64 ./cmd/sync
+      - run: node --check cmd/sync/web/app.js
+      - run: node --check tests/encrypted-roundtrip.mjs
+      - run: node tests/encrypted-roundtrip.mjs
+      - run: bash tests/additions-cli.sh
+      - run: bash tests/lan-send-cli.sh
+      - run: bash tests/sender-source-cli.sh
+      - run: bash tests/offline-inventory-cli.sh
+      - run: bash tests/offline-challenge-cli.sh
+      - run: bash tests/one-use-challenge-cli.sh
+      - run: bash tests/receiver-residue-cli.sh
+      - run: bash tests/device-identity-cli.sh
+      - run: bash tests/mutual-identity-cli.sh
+      - run: bash tests/rotation-cli.sh
+      - run: bash tests/secure-lan-cli.sh
+      - run: bash tests/historical-cli.sh
+      - run: bash tests/watch-cli.sh
+      - run: bash tests/bidirectional-cli.sh
+      - run: bash tests/continuous-additions-cli.sh
+      - run: bash tests/durable-state-cli.sh
+      - run: bash tests/pending-recovery-cli.sh
+      - run: go test ./internal/syncplan -run "TestPaddedConfidential|TestLegacyConfidential" -count=1
+      - run: go test ./internal/syncplan -run "TestProtected" -count=1
+      - run: go test ./internal/syncplan -run "TestTicketMarker|TestOneUse" -count=1
+      - run: bash tests/confidential-offline-cli.sh

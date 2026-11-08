@@ -1,0 +1,5 @@
+/sync
+*.test
+*.out
+private-storage/
+.DS_Store
